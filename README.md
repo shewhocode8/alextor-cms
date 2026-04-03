@@ -59,4 +59,4 @@ Key capabilities added
 •  Analytics assistance: natural-language report generation, productivity insights, workload forecasting								
 •  Session management: automatic context detection per module, multi-turn memory, conversation naming								
 •  Compliance: immutable AI audit log, hallucination disclaimer, confidentiality mode, private deployment option								
-<img width="1728" height="1619" alt="image" src="https://github.com/user-attachments/assets/cf7ee6aa-82d4-4188-97b5-811b571b8d2b" />
+
