@@ -1,13 +1,8 @@
 # alextor-cms
 <img width="1660" height="825" alt="image" src="https://github.com/user-attachments/assets/9b5319a0-7cb6-4017-8ec6-01a994c23488" />
 
-**ALEXTOR - CASE MANAGEMENT SYSTEM		**						
-								
-Priority Legend & Scope								
-Must Have 	Core system requirement. Cannot launch without it.							
-Should Have  	Important for full usability. Deliver in early sprints after core.							
-Nice to Have  	Enhances experience. Backlog / post-launch.							
-								
+**ALEXTOR - CASE MANAGEMENT SYSTEM		**								
+										
 Strategic Direction								
 								
 This is deployed on Huwaei Cloud. All backend All backend services, database (PostgreSQL-compatible RDS), object storage (OBS), API gateway (APIG), secrets management, logging (LTS), and AI inference are provisioned within Huawei Cloud. A new Module 16 — Cloud Infrastructure covers all Huawei Cloud-specific requirements. Impacted existing modules: Auth (IAM), Matters (RDS storage), Settings (cloud config), AI (ModelArts endpoint, vector DB on RDS/DCS).								
@@ -16,27 +11,17 @@ This is deployed on Huwaei Cloud. All backend All backend services, database (Po
 Document Management System - OneDrive Integration								
 								
 It includes its own DMS capabilities (naming convention enforcement, metadata, access control, indexing, retrieval) with Microsoft 365 OneDrive as the physical file storage layer for the MVP. LawOffice360 is the control layer — it manages folders, naming, metadata, and permissions. Files reside in OneDrive. A new Module 8 — Document Management System covers all DMS requirements in full. Impacted existing modules: Matters (auto-create case folder in OneDrive), App Integrations (Graph API), Settings (DMS configuration), AI (document pipeline from OneDrive).								
-								
-								
-								
+																	
 Integration Direction - Microsoft Graph API								
 								
-OneDrive operations are executed via Microsoft Graph API v1.0: folder creation, file upload, metadata, permission management. The integration layer handles throttling, retries, and error queuing. Permission changes in ALEXTOR-CMS are synchronised to OneDrive folder permissions in real time via Graph API. This is covered in Module 8 and Module 11.								
-								
-								
-								
+OneDrive operations are executed via Microsoft Graph API v1.0: folder creation, file upload, metadata, permission management. The integration layer handles throttling, retries, and error queuing. Permission changes in ALEXTOR-CMS are synchronised to OneDrive folder permissions in real time via Graph API. This is covered in Module 8 and Module 11.																												
 MVP Focus								
 								
 The MVP scope is: case/matter management, document management (OneDrive), dashboard + tracking, deadlines + tasks, AI drafting and summarisation. Complexity is minimised; speed, usability, and stability are prioritised. MVP-critical requirements are marked Must Have. Nice to Have items are deferred post-launch.								
-								
-								
-								
+															
 Security & Privacy by Design								
 								
-All components follow Privacy and Security by Design. A new Module 17 — Security & Privacy by Design captures cross-cutting security requirements: dual-layer RBAC + case-based access control, immutable audit logging, secure API practices (JWT, input validation, rate limiting), controlled AI access to case data, and privacy principles (minimal data collection, deletion on offboarding). These requirements apply to and are enforced across every other module.								
-								
-								
-								
+All components follow Privacy and Security by Design. A new Module - Security & Privacy by Design captures cross-cutting security requirements: dual-layer RBAC + case-based access control, immutable audit logging, secure API practices (JWT, input validation, rate limiting), controlled AI access to case data, and privacy principles (minimal data collection, deletion on offboarding). These requirements apply to and are enforced across every other module.								
 								
 Conversational AI Assistant: Architecture Overview								
 The AI Assistant is a deeply integrated, knowledge-base-driven conversational system embedded inside the Case Management System. It is not a generic chatbot — it is a legal intelligence layer that reads, understands, and reasons over the firm's own data: every uploaded document, logged communication, matter record, task, contact, and activity.								
