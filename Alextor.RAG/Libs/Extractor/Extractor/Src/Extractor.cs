@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Text;
+using Lib.Extractor.OCR;
 namespace Lib.Extractor;
 
 public struct ExtractionResult
@@ -24,74 +25,6 @@ public static class Parser
         }
 
         return st.ToString();
-    }
-
-    private static string _GetTessDataPath()
-    {
-        var dir = Path.Join(AppContext.BaseDirectory, "tessdata");
-        Directory.CreateDirectory(dir);
-        var filename = Path.Join(dir, "eng.traineddata");
-        if (Path.Exists(filename))
-        {
-            return dir;
-        }
-
-        try
-        {
-            using (var client = new HttpClient())
-            {
-                var b = client.GetByteArrayAsync("https://raw.githubusercontent.com/tesseract-ocr/tessdata/refs/heads/main/eng.traineddata")
-                    .GetAwaiter()
-                    .GetResult();
-                if (b == null || b.Length == 0)
-                {
-                    return "";
-                }
-
-
-                using (var f = File.OpenWrite(filename))
-                {
-                    f.Write(b);
-                }
-                return dir;
-            }
-        }
-        catch (Exception ex)
-        {
-            throw new UnexpectedErrorException(ex);
-        }
-    }
-
-    private static string _OCRImage(Stream stream)
-    {
-        try
-        {
-            // not very effective on images with design
-            // but should work on img documents
-            var tessdataDir = _GetTessDataPath();
-            var psi = new ProcessStartInfo
-            {
-                FileName = "tesseract",
-                Arguments = string.Format("stdin stdout --oem 1 --psm 6 --tessdata-dir {0}", tessdataDir),
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-            };
-
-            using var process = Process.Start(psi)!;
-
-            stream.CopyTo(process.StandardInput.BaseStream);
-            process.StandardInput.Close();
-
-            string result = process.StandardOutput.ReadToEnd();
-            process.WaitForExit();
-
-            return result.Trim();
-        }
-        catch (Exception ex)
-        {
-            throw new UnexpectedErrorException(ex);
-        }
     }
 
     private static FileType _CheckFileSig(byte[] buffer)
@@ -123,8 +56,15 @@ public static class Parser
         return FileType.Txt;
     }
 
-    // let the caller handle disposal of stream
-    public static ExtractionResult Parse(Stream content)
+    /// <summary>
+    /// let the caller handle disposal of stream.
+    /// </summary>
+    /// <param name="content"></param>
+    /// <param name="filename"></param>
+    /// <returns></returns>
+    /// <exception cref="StreamNotReadableException"></exception>
+    /// <exception cref="ContentEmptyException"></exception>
+    public static ExtractionResult Parse(Stream content, string? filename = null)
     {
         if (!content.CanRead)
             throw new StreamNotReadableException();
@@ -146,7 +86,8 @@ public static class Parser
         {
             case FileType.JPG:
             case FileType.PNG:
-                stContent.Append(_OCRImage(content));
+                var ocr = new TesseractOCR();
+                stContent.Append(ocr.Extract(content));
                 break;
             case FileType.Txt:
                 stContent.Append(_StreamToString(content));

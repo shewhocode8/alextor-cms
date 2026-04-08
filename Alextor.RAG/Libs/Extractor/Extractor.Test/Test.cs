@@ -28,9 +28,22 @@ public class Test
 @"HOW TO COMBINE
 TEXT AND IMAGE
 IN ELEARNING DESIGN";
-        Console.WriteLine("Content:\n{0}\nEND", content);
 
         Assert.True(content.Content == expected, string.Format("Content is \n\"{0}\"\n\nbut got \n\"{1}\"", expected, content.Content));
         Assert.True(content.FileType == FileType.PNG, "");
+    }
+
+    [Fact]
+    public void Test3()
+    {
+        var path = Path.Join(AppContext.BaseDirectory, "Files", "img2.jpeg");
+
+        var stream = File.OpenRead(path);
+
+        var content = Parser.Parse(stream);
+        var expected = "Best.\nSummer.\nEver.";
+
+        Assert.True(content.Content == expected, string.Format("Content is \n\"{0}\"\n\nbut got \n\"{1}\"", expected, content.Content));
+        Assert.True(content.FileType == FileType.JPG, "");
     }
 }
