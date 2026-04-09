@@ -115,4 +115,35 @@ IN ELEARNING DESIGN";
         Assert.True(content.Content.Length > 0, "The content length must be greater than 0");
         Assert.True(content.FileType == FileType.DOCX, "");
     }
+
+    [Fact]
+    public void Test6()
+    {
+        var path = Path.Join(AppContext.BaseDirectory, "Files", "xlsx1.xlsx");
+
+        var stream = File.OpenRead(path);
+
+        var content = Parser.Parse(stream);
+        stream.Dispose();
+        // var expected = "";
+
+#if DEBUG
+        var bdir = Path.Join(AppContext.BaseDirectory, "out");
+        Directory.CreateDirectory(bdir);
+        var fpath = Path.Join(bdir, "test6.md");
+        if (File.Exists(fpath))
+        {
+            File.Delete(fpath);
+        }
+        var writer = File.OpenWrite(fpath);
+
+        var bytes = Encoding.UTF8.GetBytes(content.Content);
+        writer.Write(bytes);
+        writer.Dispose();
+#endif
+
+        Console.WriteLine(content);
+        Assert.True(content.Content.Length > 0, "The content length must be greater than 0");
+        Assert.True(content.FileType == FileType.XLSX, "");
+    }
 }

@@ -19,7 +19,7 @@ public class Docx : IExtractor
     {
         var content = new StringBuilder();
         var isList = false;
-        // LIST (numbered/bulleted)
+
         if (p.ParagraphProperties?.NumberingProperties != null)
         {
             // TODO: update to set nums if its ordered

@@ -38,10 +38,15 @@ public static class Parser
                 );
             case OpenXMLType.Type.PPTX:
             case OpenXMLType.Type.XLSX:
+                ex = ExtractorManager.Get(ExtractorManager.ExtractorType.XLSX);
+                return Tuple.Create(
+                    ex.Extract(content),
+                    FileType.XLSX
+                );
             default:
                 break;
         }
-        return null;
+        throw new FileNotSupportedException();
     }
 
     /// <summary>
@@ -52,6 +57,7 @@ public static class Parser
     /// <returns>ExtractionResult</returns>
     /// <exception cref="StreamNotReadableException"></exception>
     /// <exception cref="ContentEmptyException"></exception>
+    /// <exception cref="FileNotSupportedException"></exception>
     public static ExtractionResult Parse(Stream content)
     {
         if (!content.CanRead)

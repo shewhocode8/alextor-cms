@@ -1,4 +1,3 @@
-using System;
 namespace Alextor.RAG.Extractor;
 
 public class ExtractorException : Exception
@@ -30,4 +29,9 @@ public class UnexpectedErrorException : ExtractorException
 public class ExtractorNotConfiguredException : ExtractorException
 {
     public ExtractorNotConfiguredException(string exName) : base($"Extractor {exName} is not configured") {}
+}
+
+public class FileNotSupportedException : ExtractorException
+{
+    public FileNotSupportedException() : base("File type is not supported.") {}
 }

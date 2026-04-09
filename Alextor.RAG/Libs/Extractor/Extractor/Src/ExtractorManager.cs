@@ -26,6 +26,8 @@ public class ExtractorManager
                 return new PdfPig();
             case ExtractorType.DOCX:
                 return new Docx();
+            case ExtractorType.XLSX:
+                return new Xlsx();
         }
 
         throw new ExtractorNotConfiguredException(exType.ToString());

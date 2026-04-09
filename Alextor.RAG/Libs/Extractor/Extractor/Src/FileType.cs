@@ -6,6 +6,7 @@ public enum FileType
     PNG,
     JPG,
     ZIP,
-    DOCX, // for docx, pptx, xlsx
+    DOCX,
+    XLSX,
     PDF
 }
