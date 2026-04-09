@@ -1,4 +1,4 @@
-namespace Lib.Extractor;
+namespace Alextor.RAG.Extractor;
 
 public enum FileType
 {

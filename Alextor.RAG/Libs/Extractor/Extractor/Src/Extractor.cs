@@ -1,9 +1,5 @@
-﻿using System.Buffers.Binary;
-using System.Diagnostics;
-using System.Net;
-using System.Text;
-using Lib.Extractor.OCR;
-namespace Lib.Extractor;
+﻿using System.Text;
+namespace Alextor.RAG.Extractor;
 
 public struct ExtractionResult
 {
@@ -27,37 +23,9 @@ public static class Parser
         return st.ToString();
     }
 
-    private static FileType _CheckFileSig(byte[] buffer)
-    {
-        if (buffer.Length >= 4)
-        {
-            uint fileSig = BinaryPrimitives.ReadUInt32BigEndian(buffer.Take(4).ToArray());
-            if (fileSig == (uint)Constants.FileSignatures.PNG)
-            {
-                return FileType.PNG;
-            }
-            {
-                var jpgSignatures = new uint[]
-                {
-                (uint)Constants.FileSignatures.JPG_1,
-                (uint)Constants.FileSignatures.JPG_2,
-                (uint)Constants.FileSignatures.JPG_EXIF,
-                (uint)Constants.FileSignatures.JPG_JFIF
-                };
-                foreach (var sig in jpgSignatures)
-                {
-                    if (fileSig == sig)
-                    {
-                        return FileType.JPG;
-                    }
-                }
-            }
-        }
-        return FileType.Txt;
-    }
-
     /// <summary>
-    /// let the caller handle disposal of stream.
+    /// Does not guarantee the `content` is in a correct state.
+    /// The caller must handle the disposal of stream content.
     /// </summary>
     /// <param name="content"></param>
     /// <param name="filename"></param>
@@ -79,14 +47,18 @@ public static class Parser
 
         var sigBuffer = sigBytes.Take(bytesRead).ToArray();
 
-        var fileType = _CheckFileSig(sigBuffer);
+        var fileType = Constants.FileSignatures.GetFileType(sigBuffer);
         var stContent = new StringBuilder();
         content.Seek(0, SeekOrigin.Begin);
         switch (fileType)
         {
+            case FileType.PDF:
+                var ex = ExtractorManager.Get(ExtractorManager.ExtractorType.PDF);
+                stContent.Append(ex.Extract(content));
+                break;
             case FileType.JPG:
             case FileType.PNG:
-                var ocr = new TesseractOCR();
+                var ocr = ExtractorManager.Get(ExtractorManager.ExtractorType.OCR);
                 stContent.Append(ocr.Extract(content));
                 break;
             case FileType.Txt:

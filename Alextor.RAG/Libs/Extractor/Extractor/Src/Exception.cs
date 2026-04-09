@@ -1,5 +1,5 @@
 using System;
-namespace Lib.Extractor;
+namespace Alextor.RAG.Extractor;
 
 public class ExtractorException : Exception
 {
@@ -23,5 +23,10 @@ public class StreamNotSeekableException : ExtractorException
 
 public class UnexpectedErrorException : ExtractorException
 {
-    public UnexpectedErrorException(Exception ex) : base(string.Format("{0}.{1}\nTrace:{2}\n", ex.Source, ex.Message, ex.StackTrace)) {}
+    public UnexpectedErrorException(Exception ex) : base($"{ex.Source}.{ex.Message}\nTrace:{ex.StackTrace}\n") {}
+}
+
+public class ExtractorNotConfiguredException : ExtractorException
+{
+    public ExtractorNotConfiguredException(string exName) : base($"Extractor {exName} is not configured") {}
 }

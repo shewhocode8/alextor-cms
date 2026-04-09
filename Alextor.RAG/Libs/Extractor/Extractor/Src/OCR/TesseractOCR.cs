@@ -1,11 +1,13 @@
 using System.Diagnostics;
-using System.Drawing;
 using ImageMagick;
-using Lib.Extractor.OCR.Interface;
+using Alextor.RAG.Extractor.Interface;
 
-namespace Lib.Extractor.OCR;
+namespace Alextor.RAG.Extractor.OCR;
 
-public class TesseractOCR : IOCR
+/// <summary>
+/// This Extractor is not thread safe
+/// </summary>
+public class TesseractOCR : IExtractor
 {
     private object _lock = new object();
     private string _GetTessDataPath()
@@ -60,12 +62,15 @@ public class TesseractOCR : IOCR
         var s = new MemoryStream();
         magick.Write(s);
 #if DEBUG
-        var path = Path.Join(AppContext.BaseDirectory, "sample.png");
-        if (Path.Exists(path))
+        try
         {
-            File.Delete(path);
-        }
-        magick.Write(path);
+            var path = Path.Join(AppContext.BaseDirectory, "sample.png");
+            if (Path.Exists(path))
+            {
+                File.Delete(path);
+            }
+            magick.Write(path);
+        } catch {}
 #endif
         s.Seek(0, SeekOrigin.Begin);
         return s;
@@ -100,21 +105,23 @@ public class TesseractOCR : IOCR
     {
         try
         {
-            var copyStream = new MemoryStream();
-            stream.CopyTo(copyStream);
-            stream.Seek(0, SeekOrigin.Begin);
-            copyStream.Seek(0, SeekOrigin.Begin);
-
-            var task = Task.Run(() => _StartExtraction(stream));
-            var task2 = Task.Run(() =>
+            using (var copyStream = new MemoryStream())
             {
-                using (var processedImg = _PreprocessImg(copyStream))
+                stream.CopyTo(copyStream);
+                stream.Seek(0, SeekOrigin.Begin);
+                copyStream.Seek(0, SeekOrigin.Begin);
+
+                var task = Task.Run(() => _StartExtraction(stream));
+                var task2 = Task.Run(() =>
                 {
-                    return _StartExtraction(processedImg);
-                }
-            });
-            var results = Task.WhenAll(task, task2).GetAwaiter().GetResult();
-            return (results[0].Length > results[1].Length) ? results[0]  : results[1];
+                    using (var processedImg = _PreprocessImg(copyStream))
+                    {
+                        return _StartExtraction(processedImg);
+                    }
+                });
+                var results = Task.WhenAll(task, task2).GetAwaiter().GetResult();
+                return (results[0].Length > results[1].Length) ? results[0] : results[1];
+            }
         }
         catch (Exception ex)
         {
