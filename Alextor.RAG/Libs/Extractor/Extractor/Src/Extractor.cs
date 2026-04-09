@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Alextor.RAG.Extractor.OpenXML;
 namespace Alextor.RAG.Extractor;
 
 public struct ExtractionResult
@@ -23,16 +24,35 @@ public static class Parser
         return st.ToString();
     }
 
+    private static Tuple<string, FileType> _HandleZIP(Stream content)
+    {
+        var openXmlType = OpenXMLType.GetType(content);
+        content.Seek(0, SeekOrigin.Begin);
+        switch (openXmlType)
+        {
+            case OpenXMLType.Type.DOCX:
+                var ex = ExtractorManager.Get(ExtractorManager.ExtractorType.DOCX);
+                return Tuple.Create(
+                    ex.Extract(content),
+                    FileType.DOCX
+                );
+            case OpenXMLType.Type.PPTX:
+            case OpenXMLType.Type.XLSX:
+            default:
+                break;
+        }
+        return null;
+    }
+
     /// <summary>
     /// Does not guarantee the `content` is in a correct state.
     /// The caller must handle the disposal of stream content.
     /// </summary>
     /// <param name="content"></param>
-    /// <param name="filename"></param>
-    /// <returns></returns>
+    /// <returns>ExtractionResult</returns>
     /// <exception cref="StreamNotReadableException"></exception>
     /// <exception cref="ContentEmptyException"></exception>
-    public static ExtractionResult Parse(Stream content, string? filename = null)
+    public static ExtractionResult Parse(Stream content)
     {
         if (!content.CanRead)
             throw new StreamNotReadableException();
@@ -60,6 +80,11 @@ public static class Parser
             case FileType.PNG:
                 var ocr = ExtractorManager.Get(ExtractorManager.ExtractorType.OCR);
                 stContent.Append(ocr.Extract(content));
+                break;
+            case FileType.ZIP:
+                var res = _HandleZIP(content);
+                stContent.Append(res.Item1);
+                fileType = res.Item2;
                 break;
             case FileType.Txt:
                 stContent.Append(_StreamToString(content));

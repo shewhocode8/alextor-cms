@@ -4,6 +4,7 @@ namespace Alextor.RAG.Extractor;
 public class ExtractorException : Exception
 {
     public ExtractorException(string message) : base(message) { }
+    public ExtractorException(string message, Exception ex) : base(message, ex) { }
 }
 
 public class ContentEmptyException : ExtractorException
@@ -23,7 +24,7 @@ public class StreamNotSeekableException : ExtractorException
 
 public class UnexpectedErrorException : ExtractorException
 {
-    public UnexpectedErrorException(Exception ex) : base($"{ex.Source}.{ex.Message}\nTrace:{ex.StackTrace}\n") {}
+    public UnexpectedErrorException(Exception ex) : base($"{ex.Source}.{ex.Message}\nTrace:{ex.StackTrace}\n", ex) { }
 }
 
 public class ExtractorNotConfiguredException : ExtractorException

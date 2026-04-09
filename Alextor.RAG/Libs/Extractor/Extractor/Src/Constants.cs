@@ -15,7 +15,14 @@ public class FileSignatures
         0xFFD8FFE0,
         0xFFD8FFE1
     ];
-    public static readonly UInt64 PDF = 0x255044462D000000;
+    public static readonly ulong PDF = 0x255044462D000000;
+
+    public static readonly uint[] ZIP =
+    {
+        0x504B0506,
+        0x504B0304,
+        0x504B0708
+    };
 
     public static FileType GetFileType(byte[] buffer)
     {
@@ -35,14 +42,23 @@ public class FileSignatures
                     }
                 }
             }
+            {
+                foreach (var sig in ZIP)
+                {
+                    if (sig == fileSig)
+                    {
+                        return FileType.ZIP;
+                    }
+                }
+            }
         }
-        if (buffer.Length >= sizeof(UInt64))
+        if (buffer.Length >= sizeof(ulong))
         {
             // The pdf signature is 5bytes long
             // so we do an XNOR to the signature which is 8bytes long
             // and do a bitwise AND on the mask to check if all the first 5bytes matched
-            UInt64 pdfMask = 0xFFFFFFFFFF000000;
-            var fileSig = BinaryPrimitives.ReadUInt64BigEndian(buffer.Take(sizeof(UInt64)).ToArray());
+            ulong pdfMask = 0xFFFFFFFFFF000000;
+            var fileSig = BinaryPrimitives.ReadUInt64BigEndian(buffer.Take(sizeof(ulong)).ToArray());
             if ((~(fileSig ^ PDF) & pdfMask) == pdfMask)
             {
                 return FileType.PDF;
