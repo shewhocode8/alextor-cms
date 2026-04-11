@@ -8,5 +8,6 @@ public enum FileType
     ZIP,
     DOCX,
     XLSX,
+    PPTX,
     PDF
 }

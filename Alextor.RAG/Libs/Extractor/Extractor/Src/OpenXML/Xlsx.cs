@@ -7,7 +7,7 @@ namespace Alextor.RAG.Extractor.OpenXML;
 
 public class Xlsx : IExtractor
 {
-    private string _Process(SpreadsheetDocument document, Cell cell)
+    private string _Process(SpreadsheetDocument document, Worksheet worksheet, Cell cell)
     {
         if (cell.CellValue == null) return "";
 
@@ -15,10 +15,18 @@ public class Xlsx : IExtractor
 
         if (cell.DataType != null && cell.DataType == CellValues.SharedString)
         {
+            var hyperlink = worksheet.Descendants<Hyperlink>().FirstOrDefault(x => x.Reference != null && x.Reference == cell.CellReference);
             var sstPart = document.WorkbookPart!.SharedStringTablePart;
-            if (sstPart == null || sstPart!.SharedStringTable == null) return "";
 
-            value = sstPart!.SharedStringTable.ElementAt(int.Parse(value)).InnerText;
+            if (hyperlink != null)
+            {
+                var link = worksheet.WorksheetPart!.HyperlinkRelationships.FirstOrDefault(x => x.Id == hyperlink.Id)?
+                            .Uri.ToString();
+                if (!string.IsNullOrEmpty(link))
+                    value = $"[{hyperlink.Display}]({link})";
+            }
+            else if (sstPart == null || sstPart!.SharedStringTable == null) 
+                value = sstPart!.SharedStringTable!.ElementAt(int.Parse(value)).InnerText;
         }
 
         return value;
@@ -55,7 +63,7 @@ public class Xlsx : IExtractor
         return content.ToString();
     }
 
-    private string _Process(SpreadsheetDocument document, SheetData sheetData)
+    private string _Process(SpreadsheetDocument document, Worksheet worksheet, SheetData sheetData)
     {
         var content = new StringBuilder();
         var rowN = 0;
@@ -64,7 +72,7 @@ public class Xlsx : IExtractor
             var rows = new List<string>();
             foreach (var cell in row.Elements<Cell>())
             {
-                rows.Add(_Process(document, cell));
+                rows.Add(_Process(document, worksheet, cell));
             }
 
             content.Append(string.Format("| {0} |", string.Join(" | ", rows)) + Environment.NewLine);
@@ -98,14 +106,29 @@ public class Xlsx : IExtractor
                 var relId = workbookPart.GetIdOfPart(worksheetPart);
                 var sheet = workbookPart.Workbook.Sheets.Elements<Sheet>()
                     .FirstOrDefault((x) => x.Id == relId);
+
                 if (sheet != null)
                 {
                     content.Append($"# {sheet.Name}{Environment.NewLine}");
                 }
 
-                foreach (var sheetData in worksheetPart.Worksheet.Elements<SheetData>())
+                foreach (var element in worksheetPart.Worksheet.Elements())
                 {
-                    content.Append(Environment.NewLine + _Process(document, sheetData) + Environment.NewLine);
+                    // if (element is Hyperlinks hyperlinks)
+                    // {
+                    //     foreach (var hyperlink in hyperlinks.Elements<Hyperlink>())
+                    //     {
+                    //         var link = worksheet.WorksheetPart!.HyperlinkRelationships
+                    //             .FirstOrDefault(x => x.Id == hyperlink.Id)?
+                    //             .Uri.ToString();
+                    //         if (string.IsNullOrEmpty(link)) continue;
+                    //         content.Append($" [{hyperlink.Display}]({link})");
+                    //     }
+                    // }
+                    if (element is SheetData sheetData)
+                    {
+                        content.Append(Environment.NewLine + _Process(document, worksheetPart.Worksheet, sheetData) + Environment.NewLine);
+                    }
                 }
 
                 if (worksheetPart.DrawingsPart == null)

@@ -37,6 +37,11 @@ public static class Parser
                     FileType.DOCX
                 );
             case OpenXMLType.Type.PPTX:
+                ex = ExtractorManager.Get(ExtractorManager.ExtractorType.PPTX);
+                return Tuple.Create(
+                    ex.Extract(content),
+                    FileType.PPTX
+                );
             case OpenXMLType.Type.XLSX:
                 ex = ExtractorManager.Get(ExtractorManager.ExtractorType.XLSX);
                 return Tuple.Create(

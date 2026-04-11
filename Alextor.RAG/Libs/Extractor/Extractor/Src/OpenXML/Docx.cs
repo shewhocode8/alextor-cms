@@ -1,47 +1,24 @@
+using System.Collections.Immutable;
 using System.Text;
 using Alextor.RAG.Extractor.Interface;
 using DocumentFormat.OpenXml.Drawing;
 using DocumentFormat.OpenXml.Packaging;
-using OpenXmlParagraph = DocumentFormat.OpenXml.Wordprocessing.Paragraph;
-
-using OpenXmlRun = DocumentFormat.OpenXml.Wordprocessing.Run;
-using OpenXmlText = DocumentFormat.OpenXml.Wordprocessing.Text;
-using OpenXmlDrawing = DocumentFormat.OpenXml.Wordprocessing.Drawing;
-using OpenXmlTable = DocumentFormat.OpenXml.Wordprocessing.Table;
-using OpenXmlTableRow = DocumentFormat.OpenXml.Wordprocessing.TableRow;
-using OpenXmlTableCell = DocumentFormat.OpenXml.Wordprocessing.TableCell;
+using W = DocumentFormat.OpenXml.Wordprocessing;
 
 namespace Alextor.RAG.Extractor.OpenXML;
 
 public class Docx : IExtractor
 {
-    private string _Process(OpenXmlParagraph p, WordprocessingDocument word)
+    private string _Process(W.Run run, WordprocessingDocument word)
     {
         var content = new StringBuilder();
-        var isList = false;
-
-        if (p.ParagraphProperties?.NumberingProperties != null)
+        foreach (var element in run.Elements())
         {
-            // TODO: update to set nums if its ordered
-            var numProps = p.ParagraphProperties?.NumberingProperties!;
-            int ilvl = numProps.NumberingLevelReference?.Val?.Value ?? 0;
-            // int numId = numProps.NumberingId?.Val?.Value ?? 0;
-
-            var tab = new string('\t', ilvl);
-            isList = true;
-            content.Append($"{tab}- {p.InnerText.Trim()}{Environment.NewLine}");
-        }
-
-        foreach (var run in p.Elements<OpenXmlRun>())
-        {
-            var text = run.GetFirstChild<OpenXmlText>();
-            if (text != null && !isList)
+            if (element is W.Text text)
             {
-                content.Append(text.Text + Environment.NewLine);
+                content.Append(text.InnerText.Trim());
             }
-
-            var drawing = run.GetFirstChild<OpenXmlDrawing>();
-            if (drawing != null)
+            else if (element is W.Drawing drawing)
             {
                 var blip = drawing.Descendants<Blip>().FirstOrDefault();
                 if (blip?.Embed != null)
@@ -73,22 +50,56 @@ public class Docx : IExtractor
                 }
             }
         }
+        return content.ToString().Trim();
+    }
+
+    private string _Process(W.Paragraph p, WordprocessingDocument word)
+    {
+        var content = new StringBuilder();
+
+        if (p.ParagraphProperties?.NumberingProperties != null)
+        {
+            // TODO: update to set nums if its ordered
+            var numProps = p.ParagraphProperties?.NumberingProperties!;
+            int ilvl = numProps.NumberingLevelReference?.Val?.Value ?? 0;
+            // int numId = numProps.NumberingId?.Val?.Value ?? 0;
+
+            var tab = new string('\t', ilvl);
+            content.Append($"{tab}- ");
+        }
+
+        foreach (var element in p.Elements())
+        {
+            if (element is W.Hyperlink hyperlink)
+            {
+                var link = word.MainDocumentPart!.HyperlinkRelationships
+                    .FirstOrDefault(x => x.Id == hyperlink.Id)?
+                    .Uri.ToString();
+                if (string.IsNullOrEmpty(link)) continue;
+                var sp = (content.Length > 0)? " ":"";
+                content.Append($"{sp}[{hyperlink.InnerText.Trim()}]({link})");
+            }
+            else if (element is W.Run run)
+            {
+                content.Append(_Process(run, word));
+            }
+        }
 
         return content.ToString();
     }
 
-    private string _Process(OpenXmlTable t, WordprocessingDocument word)
+    private string _Process(W.Table t, WordprocessingDocument word)
     {
         var content = new StringBuilder();
         var rowN = 0;
-        foreach (var row in t.Elements<OpenXmlTableRow>())
+        foreach (var row in t.Elements<W.TableRow>())
         {
             var rows = new List<string>();
-            foreach (var cell in row.Elements<OpenXmlTableCell>())
+            foreach (var cell in row.Elements<W.TableCell>())
             {
-                foreach (var p in cell.Elements<OpenXmlParagraph>())
+                foreach (var p in cell.Elements<W.Paragraph>())
                 {
-                    rows.Add(_Process(p, word).Trim());
+                    rows.Add(_Process(p, word));
                 }
             }
             content.Append(string.Format("| {0} |", string.Join(" | ", rows)) + Environment.NewLine);
@@ -130,21 +141,24 @@ public class Docx : IExtractor
 
             foreach (var element in word.MainDocumentPart.Document.Body.Elements())
             {
-                if (element is OpenXmlParagraph p)
+                if (element is W.Paragraph p)
                 {
-                    body.Add(_Process(p, word));
+                    var c = _Process(p, word);
+                    if (!string.IsNullOrEmpty(c))
+                        body.Add(c + Environment.NewLine);
                 }
-
-                if (element is OpenXmlTable t)
+                else if (element is W.Table t)
                 {
-                    body.Add(Environment.NewLine + _Process(t, word) + Environment.NewLine);
+                    var c = _Process(t, word);
+                    if (!string.IsNullOrEmpty(c))
+                        body.Add(Environment.NewLine + c + Environment.NewLine);
                 }
             }
             // word.MainDocumentPart.Document.Body.Elements
         }
 
         content.Append("# Header" + Environment.NewLine);
-        content.Append(string.Join(Environment.NewLine, headers) + Environment.NewLine);
+        content.Append(string.Join(" ", headers) + Environment.NewLine);
 
         content.Append("# Body" + Environment.NewLine);
         content.Append(string.Join("", body.Where(x => !string.IsNullOrEmpty(x))) + Environment.NewLine);

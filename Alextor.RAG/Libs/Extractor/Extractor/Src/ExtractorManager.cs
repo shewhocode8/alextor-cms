@@ -28,6 +28,8 @@ public class ExtractorManager
                 return new Docx();
             case ExtractorType.XLSX:
                 return new Xlsx();
+            case ExtractorType.PPTX:
+                return new Pptx();
         }
 
         throw new ExtractorNotConfiguredException(exType.ToString());
