@@ -16,6 +16,7 @@ public class Test
         var orig_content = File.ReadAllText(path);
 
         var content = Parser.Parse(stream);
+        stream.Dispose();
         Assert.True(content.Content == orig_content, "Content should be equal to file content");
         Assert.True(content.FileType == FileType.Txt, "FileType should be FileType.Txt");
     }
@@ -142,7 +143,6 @@ IN ELEARNING DESIGN";
         writer.Dispose();
 #endif
 
-        Console.WriteLine(content);
         Assert.True(content.Content.Length > 0, "The content length must be greater than 0");
         Assert.True(content.FileType == FileType.XLSX, "");
     }
@@ -173,9 +173,26 @@ IN ELEARNING DESIGN";
         writer.Dispose();
 #endif
 
-        Console.WriteLine(content);
         Assert.True(content.Content.Length > 0, "The content length must be greater than 0");
         Assert.True(content.FileType == FileType.PPTX, "");
     }
  
+    [Fact]
+    public void Test8()
+    {
+        var path = Path.Join(AppContext.BaseDirectory, "Files", "random");
+
+        var stream = File.OpenRead(path);
+
+        try
+        {
+            var content = Parser.Parse(stream);
+            stream.Dispose();
+        }
+        catch (FileNotSupportedException) { }
+        catch (Exception)
+        {
+            Assert.Fail("Should throw FileNotSupportedException");
+        }
+    }
 }

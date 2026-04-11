@@ -21,12 +21,12 @@ public class Xlsx : IExtractor
             if (hyperlink != null)
             {
                 var link = worksheet.WorksheetPart!.HyperlinkRelationships.FirstOrDefault(x => x.Id == hyperlink.Id)?
-                            .Uri.ToString();
+                        .Uri.ToString();
                 if (!string.IsNullOrEmpty(link))
                     value = $"[{hyperlink.Display}]({link})";
             }
-            else if (sstPart == null || sstPart!.SharedStringTable == null) 
-                value = sstPart!.SharedStringTable!.ElementAt(int.Parse(value)).InnerText;
+            else if (sstPart != null || sstPart!.SharedStringTable != null) 
+                value = sstPart.SharedStringTable!.ElementAt(int.Parse(value)).InnerText;
         }
 
         return value;

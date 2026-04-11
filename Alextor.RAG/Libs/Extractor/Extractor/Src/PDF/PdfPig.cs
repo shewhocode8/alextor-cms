@@ -65,7 +65,7 @@ public class PdfPig : IExtractor
                     {
                         if (block.tb != null)
                         {
-                            c.Append(block.tb.Text.Trim() + block.tb.Separator ?? Environment.NewLine);
+                            c.Append(block.tb.Text.Trim() + block.tb.Separator + Environment.NewLine);
                         }
                         if (block.img != null)
                         {

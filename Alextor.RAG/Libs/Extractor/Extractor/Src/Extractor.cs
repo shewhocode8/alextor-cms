@@ -15,10 +15,18 @@ public static class Parser
         var st = new StringBuilder();
         var buffer = new byte[2048];
         int bytesRead;
-        while ((bytesRead = content.Read(buffer, 0, buffer.Length)) > 0)
+        try
         {
-            st.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
-            buffer.AsSpan().Clear();
+            var utf8 = new UTF8Encoding(false, true);
+            while ((bytesRead = content.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                st.Append(utf8.GetString(buffer, 0, bytesRead));
+                buffer.AsSpan().Clear();
+            }
+        }
+        catch
+        {
+            throw new FileNotSupportedException();
         }
 
         return st.ToString();

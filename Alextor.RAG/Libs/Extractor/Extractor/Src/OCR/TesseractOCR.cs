@@ -12,9 +12,17 @@ public class TesseractOCR : IExtractor
     private object _lock = new object();
     private string _GetTessDataPath()
     {
+
+        var tessdata_uri = Environment.GetEnvironmentVariable("ALEXTOR_RAG_TESSERACT_TESSDATA_URI");
+        if (tessdata_uri == null)
+        {
+            tessdata_uri = "https://raw.githubusercontent.com/tesseract-ocr/tessdata/refs/heads/main/eng.traineddata";
+        }
+
+        var uri = new Uri(tessdata_uri);
         var dir = Path.Join(AppContext.BaseDirectory, "tessdata");
         Directory.CreateDirectory(dir);
-        var filename = Path.Join(dir, "eng.traineddata");
+        var filename = Path.Join(dir, uri.Segments.Last());
         if (Path.Exists(filename))
         {
             return dir;
@@ -26,7 +34,7 @@ public class TesseractOCR : IExtractor
             {
                 using (var client = new HttpClient())
                 {
-                    var b = client.GetStreamAsync("https://raw.githubusercontent.com/tesseract-ocr/tessdata/refs/heads/main/eng.traineddata")
+                    var b = client.GetStreamAsync(tessdata_uri)
                         .GetAwaiter()
                         .GetResult();
                     if (b == null)

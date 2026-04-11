@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Text;
 
 namespace Alextor.RAG.Extractor.Constants;
 
@@ -63,6 +64,16 @@ public class FileSignatures
             {
                 return FileType.PDF;
             }
+        }
+
+        try
+        {
+            var utf8 = new UTF8Encoding(false, true);
+            utf8.GetString(buffer);
+        }
+        catch
+        {
+            throw new FileNotSupportedException();
         }
         return FileType.Txt;
     }
